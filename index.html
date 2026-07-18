@@ -152,7 +152,7 @@
 
 <script>
 "use strict";
-const VERSION = "2.6-web";
+const VERSION = "2.8-web";
 
 // ------------------------------------------------------------------
 // Word lists: simple Spanish (A1), clues in Spanish
@@ -618,7 +618,16 @@ function renderClues() {
     for (const w of puzzle.words.filter((x) => x.dir === dir)) {
       const b = document.createElement("button");
       b.className = "clueItem";
-      b.innerHTML = `<b>${w.num}.</b><span>${w.clue} <span class="len">(${w.word.length})</span></span>`;
+      const num = document.createElement("b");
+      num.textContent = w.num + ".";
+      const clueTxt = document.createElement("span");
+      clueTxt.textContent = w.clue;
+      const len = document.createElement("span");
+      len.className = "len";
+      len.textContent = `(${w.word.length})`;
+      const span = document.createElement("span");
+      span.append(clueTxt, " ", len);
+      b.append(num, span);
       b.onclick = () => { setActive(w.cells[0], w.dir); };
       clueEls[w.num + dir] = b;
       box.appendChild(b);
@@ -687,6 +696,7 @@ function afterFill(k) {
       for (const [ck, sol] of puzzle.cells) status[ck] = entries[ck] === sol ? "ok" : "bad";
     }
   }
+  saveState();
   // advance, skipping cells that are already filled
   let dir = active ? active.dir : null;
   if (!dir || !wordAt(k, dir)) dir = wordAt(k, "H") ? "H" : "V";
@@ -715,6 +725,8 @@ function doBackspace() {
   if (entries[k]) {
     delete entries[k];
     delete status[k];
+    solved = false;
+    saveState();
     updateAll();
   } else {
     const w = wordAt(k, active.dir);
@@ -724,6 +736,8 @@ function doBackspace() {
       const pk = w.cells[i];
       delete entries[pk];
       delete status[pk];
+      solved = false;
+      saveState();
       setActive(pk, active.dir);
     }
   }
@@ -744,6 +758,7 @@ function check() {
   for (const [ck, sol] of puzzle.cells) {
     if (entries[ck]) status[ck] = entries[ck] === sol ? "ok" : "bad";
   }
+  saveState();
   updateAll();
 }
 
@@ -756,14 +771,116 @@ function hint() {
   afterFill(k);
 }
 
-function newPuzzle(t = theme) {
-  theme = t;
-  puzzle = generatePuzzle(THEMES[t]);
-  entries = {}; status = {}; active = null; solved = false;
+function hasProgress() {
+  return !!puzzle && !solved && Object.keys(entries).length > 0;
+}
+
+// ---------- Persistence (survive reloads / closing the tab) ----------
+const SAVE_KEY = "crucigramas-save-v1";
+let storageOk = true; // false when localStorage is unavailable (private mode / quota)
+
+// Called from every state mutation (afterFill, doBackspace, check, installPuzzle).
+// Keeps at most one save: the current unfinished puzzle with progress, or a
+// theme-only record so the theme choice survives solved/fresh states.
+function saveState() {
+  try {
+    if (!hasProgress()) {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ theme }));
+    } else {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        theme, entries, status,
+        puzzle: {
+          cells: [...puzzle.cells],
+          starts: [...puzzle.starts],
+          words: puzzle.words,
+          rows: puzzle.rows,
+          cols: puzzle.cols,
+        },
+      }));
+    }
+    storageOk = true;
+  } catch (e) { storageOk = false; }
+}
+
+// Rebuild a puzzle object from its serialized form, or return null if the
+// data is structurally invalid — a corrupt save must never install.
+function restorePuzzle(p) {
+  if (!p || !Number.isInteger(p.rows) || !Number.isInteger(p.cols) ||
+      p.rows < 1 || p.cols < 1 || p.rows > SIZE || p.cols > SIZE ||
+      !Array.isArray(p.cells) || !p.cells.length ||
+      !Array.isArray(p.starts) || !Array.isArray(p.words) || !p.words.length) return null;
+  const inBounds = (k) => {
+    const [r, c] = String(k).split(",").map(Number);
+    return Number.isInteger(r) && Number.isInteger(c) && r >= 0 && r < p.rows && c >= 0 && c < p.cols;
+  };
+  const LETTER = /^[A-ZÑ]$/;
+  const cells = new Map(), starts = new Map();
+  for (const e of p.cells) {
+    if (!Array.isArray(e) || typeof e[0] !== "string" || typeof e[1] !== "string" ||
+        !LETTER.test(e[1]) || !inBounds(e[0])) return null;
+    cells.set(e[0], e[1]);
+  }
+  for (const e of p.starts) {
+    if (!Array.isArray(e) || typeof e[0] !== "string" ||
+        !Number.isInteger(e[1]) || e[1] <= 0 || !cells.has(e[0])) return null;
+    starts.set(e[0], e[1]);
+  }
+  for (const w of p.words) {
+    if (!w || typeof w.word !== "string" || !/^[A-ZÑ]+$/.test(w.word) || typeof w.clue !== "string" ||
+        (w.dir !== "H" && w.dir !== "V") || !Number.isInteger(w.num) || w.num <= 0 ||
+        !Array.isArray(w.cells) || w.cells.length !== w.word.length ||
+        !w.cells.every((k, i) => cells.get(k) === w.word[i])) return null;
+  }
+  return { cells, starts, words: p.words, rows: p.rows, cols: p.cols };
+}
+
+function loadState() {
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { /* fall through */ }
+  if (!s || typeof s !== "object") return false;
+  // own-property check: inherited names like "__proto__" must not pass as themes
+  const themeOk = typeof s.theme === "string" &&
+    Object.prototype.hasOwnProperty.call(THEMES, s.theme) && Array.isArray(THEMES[s.theme]);
+  // keep the theme choice even when the save itself is unusable
+  if (themeOk) theme = s.theme;
+  const p = themeOk && !s.solved ? restorePuzzle(s.puzzle) : null;
+  if (!p) {
+    // replace an unusable save with a theme-only record so it can't break the next load
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ theme })); } catch (e) { /* ignore */ }
+    return false;
+  }
+  // refresh clue text from THEMES so content fixes reach restored games
+  const clues = new Map(THEMES[s.theme]);
+  for (const w of p.words) if (clues.has(w.word)) w.clue = clues.get(w.word);
+  // keep only entries/status that fit the restored grid
+  const e = {}, st = {};
+  if (s.entries && typeof s.entries === "object")
+    for (const [k, v] of Object.entries(s.entries))
+      if (p.cells.has(k) && typeof v === "string" && /^[A-ZÑ]$/.test(v)) e[k] = v;
+  if (s.status && typeof s.status === "object")
+    for (const [k, v] of Object.entries(s.status)) if (k in e && (v === "ok" || v === "bad")) st[k] = v;
+  if (!Object.keys(e).length) {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ theme })); } catch (e2) { /* ignore */ }
+    return false;
+  }
+  installPuzzle(theme, p, e, st);
+  return true;
+}
+
+// Shared reset-and-render pipeline for fresh and restored puzzles
+function installPuzzle(t, p, e = {}, st = {}) {
+  theme = t; puzzle = p; entries = e; status = st; active = null; solved = false;
   renderChips();
   buildBoard();
   renderClues();
   updateAll();
+  saveState();
+}
+
+function newPuzzle(t = theme) {
+  if (hasProgress() &&
+      !confirm("Perderás el progreso de este crucigrama. ¿Quieres continuar?")) return;
+  installPuzzle(t, generatePuzzle(THEMES[t]));
 }
 
 // ---------- Input: hardware keyboard (desktop) ----------
@@ -800,12 +917,18 @@ $("btnNew").onclick = () => newPuzzle();
 
 window.addEventListener("resize", () => { if (puzzle) { buildBoard(); updateAll(); } });
 
+// When saving is unavailable (private mode / quota), fall back to warning
+// before the page unloads, since progress really would be lost.
+window.addEventListener("beforeunload", (e) => {
+  if (!storageOk && hasProgress()) { e.preventDefault(); e.returnValue = ""; }
+});
+
 // Service worker for offline use (optional, fails silently without sw.js)
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
 
-newPuzzle(theme);
+if (!loadState()) newPuzzle(theme);
 </script>
 </body>
 </html>
