@@ -47,6 +47,7 @@ Every change follows this flow before it lands on `main`:
    adversarially verified, and confirmed findings are fixed and re-verified
    before opening the PR.
 4. Open a pull request and subscribe to its activity.
-5. Wait for human reviews and address each review comment in the PR
-   (reply in the comment thread, push fixes to the same branch). The PR
-   is done only when it is merged or closed.
+5. Wait for reviews and address each review comment individually: reply
+   in that comment's own thread (not with one summary comment) and push
+   fixes to the same branch. The PR is done only when it is merged or
+   closed.
