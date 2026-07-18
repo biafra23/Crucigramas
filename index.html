@@ -618,8 +618,16 @@ function renderClues() {
     for (const w of puzzle.words.filter((x) => x.dir === dir)) {
       const b = document.createElement("button");
       b.className = "clueItem";
-      b.innerHTML = `<b>${w.num}.</b><span><span class="clueTxt"></span> <span class="len">(${w.word.length})</span></span>`;
-      b.querySelector(".clueTxt").textContent = w.clue;
+      const num = document.createElement("b");
+      num.textContent = w.num + ".";
+      const clueTxt = document.createElement("span");
+      clueTxt.textContent = w.clue;
+      const len = document.createElement("span");
+      len.className = "len";
+      len.textContent = `(${w.word.length})`;
+      const span = document.createElement("span");
+      span.append(clueTxt, " ", len);
+      b.append(num, span);
       b.onclick = () => { setActive(w.cells[0], w.dir); };
       clueEls[w.num + dir] = b;
       box.appendChild(b);
@@ -830,9 +838,12 @@ function loadState() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { /* fall through */ }
   if (!s || typeof s !== "object") return false;
+  // own-property check: inherited names like "__proto__" must not pass as themes
+  const themeOk = typeof s.theme === "string" &&
+    Object.prototype.hasOwnProperty.call(THEMES, s.theme) && Array.isArray(THEMES[s.theme]);
   // keep the theme choice even when the save itself is unusable
-  if (THEMES[s.theme]) theme = s.theme;
-  const p = THEMES[s.theme] && !s.solved ? restorePuzzle(s.puzzle) : null;
+  if (themeOk) theme = s.theme;
+  const p = themeOk && !s.solved ? restorePuzzle(s.puzzle) : null;
   if (!p) {
     // replace an unusable save with a theme-only record so it can't break the next load
     try { localStorage.setItem(SAVE_KEY, JSON.stringify({ theme })); } catch (e) { /* ignore */ }
