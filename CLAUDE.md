@@ -23,7 +23,7 @@ directly.
 
 ## Versioning scheme
 
-Current version: **v2.6-web**
+Current version: **v2.7-web**
 
 On **every release**, two places must be bumped in sync:
 

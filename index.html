@@ -152,7 +152,7 @@
 
 <script>
 "use strict";
-const VERSION = "2.6-web";
+const VERSION = "2.7-web";
 
 // ------------------------------------------------------------------
 // Word lists: simple Spanish (A1), clues in Spanish
@@ -756,7 +756,13 @@ function hint() {
   afterFill(k);
 }
 
+function hasProgress() {
+  return !!puzzle && !solved && Object.keys(entries).length > 0;
+}
+
 function newPuzzle(t = theme) {
+  if (hasProgress() &&
+      !confirm("Perderás el progreso de este crucigrama. ¿Quieres continuar?")) return;
   theme = t;
   puzzle = generatePuzzle(THEMES[t]);
   entries = {}; status = {}; active = null; solved = false;
@@ -799,6 +805,11 @@ $("btnHint").onclick = hint;
 $("btnNew").onclick = () => newPuzzle();
 
 window.addEventListener("resize", () => { if (puzzle) { buildBoard(); updateAll(); } });
+
+// Warn before leaving the page with an unfinished puzzle
+window.addEventListener("beforeunload", (e) => {
+  if (hasProgress()) { e.preventDefault(); e.returnValue = ""; }
+});
 
 // Service worker for offline use (optional, fails silently without sw.js)
 if ("serviceWorker" in navigator && location.protocol === "https:") {
