@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Crucigramas — Español fácil</title>
+<meta name="theme-color" content="#16336E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EEF1F6; --ink: #16336E; --blue: #2B5BB7; --blue-soft: #D8E3F7;
+    --board: #C7D4EA; --cell: #FFFFFF; --sun: #F2B23C;
+    --bad: #C94F3D; --bad-bg: #F7DBD5; --ok-bg: #E3F2E8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 16px 12px 40px; }
+  body.mobile .wrap { padding-bottom: 210px; }
+
+  header { text-align: center; margin-bottom: 12px; }
+  h1 { font-family: 'Yeseva One', serif; font-size: 30px; line-height: 1.1; margin: 0; font-weight: 400; }
+  .sub { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--blue); text-transform: uppercase; margin-top: 2px; }
+
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+  .chip {
+    flex: 0 0 auto; border: 2px solid var(--blue-soft); background: #fff; color: var(--ink);
+    border-radius: 10px; padding: 7px 12px; font-size: 13px; font-weight: 700;
+    font-family: inherit; cursor: pointer; transition: transform .15s ease; white-space: nowrap;
+  }
+  .chip:active { transform: scale(.95); }
+  .chip.sel { border-color: var(--ink); background: var(--ink); color: #fff; }
+
+  .banner {
+    position: sticky; top: 8px; z-index: 5; background: var(--ink); color: #fff;
+    border-radius: 12px; padding: 10px 14px; margin: 8px 0 10px; min-height: 44px;
+    display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 14px rgba(22,51,110,.25);
+  }
+  .banner .num {
+    background: var(--sun); color: var(--ink); border-radius: 8px;
+    font-weight: 800; font-size: 13px; padding: 2px 8px; flex-shrink: 0;
+  }
+  .banner .clue { font-size: 15px; font-weight: 600; }
+  .banner .hintText { font-size: 14px; opacity: .85; }
+
+  .boardWrap { display: flex; justify-content: center; }
+  #board { display: grid; gap: 2px; background: var(--board); padding: 4px; border-radius: 10px; }
+  .cell {
+    position: relative; background: var(--cell); border: 2px solid transparent; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; cursor: pointer; user-select: none;
+  }
+  .cell.spacer { background: transparent; cursor: default; }
+  .cell.inword { background: var(--blue-soft); border-color: var(--blue); }
+  .cell.active { border-color: var(--sun); }
+  .cell.ok { background: var(--ok-bg); }
+  .cell.bad { background: var(--bad-bg); color: var(--bad); }
+  body.solvedState .cell:not(.spacer) { background: var(--ok-bg); }
+  .cell .n {
+    position: absolute; top: 1px; left: 3px; font-weight: 800; color: var(--blue);
+    pointer-events: none; line-height: 1;
+  }
+
+  #success {
+    display: none; background: var(--sun); color: var(--ink); border-radius: 12px;
+    padding: 12px 16px; margin: 12px 0; text-align: center; font-weight: 800; font-size: 17px;
+    animation: pop .3s ease;
+  }
+  body.solvedState #success { display: block; }
+  @keyframes pop { from { transform: scale(.9); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+
+  .actions { display: flex; gap: 8px; margin: 12px 0 18px; }
+  .actions button {
+    flex: 1; border-radius: 12px; padding: 12px 0; font-size: 15px; font-weight: 800;
+    font-family: inherit; cursor: pointer;
+  }
+  .btnPrimary { background: var(--ink); color: #fff; border: 2px solid var(--ink); }
+  .btnGhost { background: #fff; color: var(--ink); border: 2px solid var(--ink); }
+
+  h2 {
+    font-family: 'Yeseva One', serif; font-size: 18px; margin: 0 0 6px; font-weight: 400;
+    border-bottom: 2px solid var(--blue-soft); padding-bottom: 4px;
+  }
+  section { margin-bottom: 14px; }
+  .clueItem {
+    display: flex; gap: 8px; align-items: baseline; width: 100%; background: transparent;
+    border: none; border-radius: 8px; padding: 6px 8px; font-family: inherit; font-size: 14px;
+    color: var(--ink); text-align: left; cursor: pointer;
+  }
+  .clueItem b { flex-shrink: 0; color: var(--blue); }
+  .clueItem.sel { background: var(--blue-soft); }
+  .clueItem.done { opacity: .45; text-decoration: line-through; }
+  .clueItem .len { opacity: .5; }
+
+  footer { font-size: 12px; text-align: center; opacity: .55; margin-top: 20px; }
+
+  #kbd {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+    background: var(--ink); padding: 8px 4px calc(10px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -4px 14px rgba(22,51,110,.3);
+  }
+  body.mobile #kbd { display: block; }
+  .krow { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
+  .key {
+    flex: 1; max-width: 44px; height: 42px; border: none; border-radius: 7px;
+    background: #fff; color: var(--ink); font-size: 17px; font-weight: 800;
+    font-family: inherit; touch-action: manipulation; padding: 0; cursor: pointer;
+  }
+  .key.back { flex: 1.6; max-width: 72px; background: var(--sun); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Crucigrama</h1>
+    <div class="sub">Español fácil · sin acentos · v<span id="ver"></span></div>
+  </header>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="banner" id="banner">
+    <span class="hintText">Toca una casilla para empezar · Tippe ein Feld an</span>
+  </div>
+
+  <div class="boardWrap"><div id="board"></div></div>
+
+  <div id="success">¡Muy bien! 🎉 Crucigrama completo.</div>
+
+  <div class="actions">
+    <button class="btnPrimary" id="btnCheck">Comprobar</button>
+    <button class="btnGhost" id="btnHint">Pista</button>
+    <button class="btnGhost" id="btnNew">Nuevo</button>
+  </div>
+
+  <section><h2>Horizontales →</h2><div id="cluesH"></div></section>
+  <section><h2>Verticales ↓</h2><div id="cluesV"></div></section>
+
+  <footer>Escribe sin acentos: «pájaro» → PAJARO · Tipp ohne Akzente eingeben</footer>
+</div>
+
+<div id="kbd"></div>
+
+<script>
+"use strict";
+const VERSION = "2.3-web";
+
+// ------------------------------------------------------------------
+// Wortlisten: einfaches Spanisch (A1), Hinweise auf Spanisch
+// ------------------------------------------------------------------
+const THEMES = {
+  "Los animales": [
+    ["PERRO","Animal que dice «guau»"],["GATO","Animal que dice «miau»"],["VACA","Animal que da leche"],
+    ["PEZ","Animal que vive en el agua"],["PAJARO","Animal que vuela y canta"],["CABALLO","Animal grande, puedes montar en él"],
+    ["RATON","Animal pequeño, le gusta el queso"],["OSO","Animal grande que duerme en invierno"],["LEON","El rey de la selva"],
+    ["CERDO","Animal rosa de la granja"],["OVEJA","Animal que da lana"],["CONEJO","Animal con orejas largas, come zanahorias"],
+    ["TORTUGA","Animal muy lento, lleva su casa"],["ABEJA","Insecto que hace miel"],["GALLINA","Ave que pone huevos"],
+    ["PATO","Ave que nada y dice «cua»"],["MOSCA","Insecto pequeño que vuela por la casa"],
+    ["ELEFANTE","Animal muy grande con la nariz muy larga"],["MONO","Animal que sube a los árboles y come plátanos"],
+    ["LOBO","Animal salvaje, familia del perro"],["SERPIENTE","Animal largo sin patas"],["TIBURON","Pez grande y peligroso del mar"],
+  ],
+  "La comida": [
+    ["PAN","Lo compras en la panadería"],["LECHE","Bebida blanca de la vaca"],["QUESO","Comida amarilla, al ratón le gusta"],
+    ["HUEVO","La gallina lo pone"],["AGUA","La bebes cuando tienes sed"],["CAFE","Bebida caliente de la mañana"],
+    ["ARROZ","Comida blanca, base de la paella"],["POLLO","Carne de esta ave"],["PESCADO","Comida del mar"],
+    ["SOPA","Comida caliente, la comes con cuchara"],["HELADO","Postre frío del verano"],
+    ["CARNE","Comida de la vaca o del cerdo"],["AZUCAR","Lo pones en el café, es dulce"],
+    ["SAL","La pones en la comida, está en el mar"],["ZUMO","Bebida de fruta"],["TARTA","Dulce de cumpleaños con velas"],
+    ["VINO","Bebida de la uva"],["GALLETA","Dulce pequeño, redondo y crujiente"],
+    ["CHOCOLATE","Dulce marrón, del cacao"],["MANTEQUILLA","La pones en el pan, es amarilla"],
+    ["YOGUR","Comida blanca de leche, en vaso pequeño"],["JAMON","Carne típica de España, del cerdo"],
+    ["SALCHICHA","Carne larga y delgada, típica de Alemania"],["ENSALADA","Comida verde y fría con lechuga y tomate"],
+    ["BOCADILLO","Pan con jamón o queso dentro"],["MIEL","Dulce de las abejas"],
+    ["TORTILLA","Comida española de huevo y patata"],
+  ],
+  "La casa": [
+    ["CAMA","Duermes en ella"],["MESA","Comes en ella"],["SILLA","Te sientas en ella"],["PUERTA","La abres para entrar"],
+    ["VENTANA","Miras la calle por ella"],["COCINA","Habitación donde preparas la comida"],["DUCHA","Te lavas en ella con agua"],
+    ["SOFA","Te sientas en él para ver la tele"],["LAMPARA","Da luz en la habitación"],["ESPEJO","Te miras en él"],
+    ["NEVERA","Guarda la comida fría"],["LLAVE","La necesitas para abrir la puerta"],["JARDIN","Lugar con flores detrás de la casa"],
+    ["TECHO","Está encima de tu cabeza"],["ESCALERA","La usas para subir"],["ARMARIO","Guardas la ropa en él"],
+    ["PARED","La habitación tiene cuatro"],["SUELO","Andas sobre él"],["TELEVISION","Ves películas y noticias en ella"],
+    ["RELOJ","Te dice la hora"],["VASO","Bebes agua en él"],["PLATO","Comes en él"],["CUCHARA","La usas para comer la sopa"],
+    ["TOALLA","Te secas con ella después de la ducha"],["ALMOHADA","Pones la cabeza en ella para dormir"],
+  ],
+  "El cuerpo": [
+    ["MANO","Tiene cinco dedos"],["OJO","Lo usas para ver"],["BOCA","La usas para comer y hablar"],["NARIZ","La usas para oler"],
+    ["OREJA","La usas para escuchar"],["PIE","Está al final de la pierna"],["CABEZA","Parte del cuerpo con el pelo"],
+    ["BRAZO","Une la mano con el cuerpo"],["PELO","Está en la cabeza, puede ser rubio"],["DIENTE","Está en la boca, es blanco"],
+    ["CORAZON","Hace «pum-pum» en el pecho"],["ESPALDA","Parte del cuerpo detrás"],["PIERNA","La usas para andar"],
+    ["DEDO","La mano tiene cinco"],["CUELLO","Une la cabeza con el cuerpo"],["HOMBRO","Está entre el cuello y el brazo"],
+    ["RODILLA","La doblas para sentarte, está en la pierna"],["LABIO","Los tienes en la boca, son rojos"],
+    ["LENGUA","Está en la boca, la usas para hablar"],["BARRIGA","Está llena después de comer mucho"],
+    ["CARA","Tiene los ojos, la nariz y la boca"],
+  ],
+  "La familia": [
+    ["MADRE","Tu mamá"],["PADRE","Tu papá"],["HIJO","El niño de sus padres"],["HERMANO","El otro hijo de tus padres"],
+    ["ABUELA","La madre de tu madre"],["ABUELO","El padre de tu padre"],["TIO","El hermano de tu madre"],
+    ["PRIMA","La hija de tu tío"],["BEBE","Persona muy pequeña que llora mucho"],["AMIGO","No es familia, pero lo quieres mucho"],
+    ["BODA","Fiesta donde dos personas se casan"],["NIETO","El hijo de tu hijo"],["MARIDO","El hombre casado con su mujer"],
+    ["MUJER","La persona casada con su marido"],["HIJA","La niña de sus padres"],["HERMANA","La otra hija de tus padres"],
+    ["TIA","La hermana de tu padre"],["PRIMO","El hijo de tu tía"],["PADRES","El padre y la madre juntos"],
+    ["GEMELOS","Dos hermanos nacidos el mismo día"],["VECINO","Vive en la casa de al lado"],
+  ],
+  "La naturaleza": [
+    ["SOL","Da luz y calor durante el día"],["LUNA","La ves en el cielo por la noche"],["MAR","Agua grande y salada"],
+    ["RIO","Agua que corre hacia el mar"],["ARBOL","Planta grande con hojas"],["FLOR","Planta bonita de colores"],
+    ["CIELO","Es azul y está arriba"],["NUBE","Es blanca, está en el cielo y trae lluvia"],["LLUVIA","Agua que cae del cielo"],
+    ["NIEVE","Es blanca y fría, cae en invierno"],["VIENTO","Aire que se mueve"],["PLAYA","Arena junto al mar"],
+    ["ESTRELLA","Brilla en el cielo por la noche"],["BOSQUE","Lugar con muchos árboles"],["PIEDRA","Es dura, está en el suelo"],
+    ["CAMPO","Lugar verde fuera de la ciudad"],["ISLA","Tierra con agua alrededor"],["LAGO","Agua grande, pero no es el mar"],
+    ["ARENA","Está en la playa, es amarilla"],["HIERBA","Planta verde del suelo"],["FUEGO","Es caliente y rojo, quema"],
+    ["HOJA","Parte verde del árbol"],["TIERRA","Nuestro planeta; las plantas crecen en ella"],
+  ],
+  "La ropa": [
+    ["CAMISA","Ropa con botones para la parte de arriba"],["PANTALON","Ropa para las piernas"],["ZAPATO","Lo llevas en el pie"],
+    ["VESTIDO","Ropa elegante de una pieza, para fiestas"],["FALDA","La llevan muchas mujeres, no es un pantalón"],
+    ["GORRO","Lo llevas en la cabeza cuando hace frío"],["ABRIGO","Ropa gruesa para el invierno"],
+    ["CALCETIN","Lo llevas entre el pie y el zapato"],["BUFANDA","La llevas en el cuello cuando hace frío"],
+    ["CAMISETA","Ropa simple de verano, sin botones"],["GAFAS","Las llevas para ver mejor"],["BOLSO","Llevas tus cosas en él"],
+    ["GUANTE","Lo llevas en la mano en invierno"],["CHAQUETA","La abres y cierras con cremallera"],
+    ["BOTA","Zapato alto para el invierno"],["CINTURON","Lo llevas en el pantalón, en la cintura"],
+    ["JERSEY","Ropa de lana para el frío"],["PIJAMA","Lo llevas para dormir"],
+    ["SOMBRERO","Lo llevas en la cabeza cuando hace sol"],["BIKINI","Lo llevas en la playa para nadar"],
+    ["CORBATA","La llevan los hombres elegantes en el cuello"],
+  ],
+  "Los colores": [
+    ["ROJO","El color del tomate"],["AZUL","El color del cielo"],["VERDE","El color de la hierba"],
+    ["AMARILLO","El color del sol"],["BLANCO","El color de la nieve"],["NEGRO","El color de la noche"],
+    ["ROSA","El color entre rojo y blanco"],["GRIS","El color de las nubes de lluvia"],["MARRON","El color del chocolate"],
+    ["MORADO","El color de la uva"],["DORADO","El color del oro"],["PLATEADO","El color de la plata"],
+    ["CLARO","No oscuro: azul ___"],["OSCURO","No claro: verde ___"],["VIOLETA","Otro nombre para el morado"],
+    ["CELESTE","Azul claro, como el cielo"],
+  ],
+  "La ciudad": [
+    ["CALLE","Los coches van por ella"],["PLAZA","Lugar abierto en el centro"],["TIENDA","Compras cosas en ella"],
+    ["BANCO","Guardas tu dinero en él"],["PARQUE","Lugar verde para pasear"],["CINE","Ves películas en él"],
+    ["MUSEO","Lugar con arte e historia"],["HOTEL","Duermes en él cuando viajas"],["MERCADO","Compras fruta y pescado en él"],
+    ["IGLESIA","Edificio con una torre y campanas"],["ESCUELA","Los niños aprenden en ella"],
+    ["HOSPITAL","Vas allí cuando estás muy enfermo"],["FARMACIA","Compras medicinas en ella"],["PUENTE","Cruza el río"],
+    ["METRO","Tren debajo de la ciudad"],["COCHE","Vas por la calle en él"],["AUTOBUS","Transporte grande con muchas personas"],
+    ["TREN","Va por las vías, de ciudad a ciudad"],["SEMAFORO","Luz roja, amarilla y verde de la calle"],
+    ["CORREOS","Envías cartas desde allí"],["RESTAURANTE","Comes allí y pagas"],["BIBLIOTECA","Lees libros allí, en silencio"],
+    ["ESTACION","El tren sale de allí"],["TAXI","Coche con conductor, pagas por el viaje"],
+  ],
+  "Los verbos": [
+    ["COMER","Lo haces con la boca y la comida"],["BEBER","Lo haces con agua o café"],["DORMIR","Lo haces por la noche en la cama"],
+    ["HABLAR","Lo haces con palabras"],["ANDAR","Lo haces con los pies, despacio"],["LEER","Lo haces con un libro"],
+    ["CANTAR","Lo haces con música y la voz"],["BAILAR","Lo haces con música y el cuerpo"],
+    ["COMPRAR","Lo haces en la tienda con dinero"],["VIVIR","Estar en un lugar: yo ___ en Berlín"],
+    ["MIRAR","Lo haces con los ojos"],["ESCRIBIR","Lo haces con un lápiz y papel"],["CORRER","Andar muy rápido"],
+    ["JUGAR","Lo hacen los niños con juguetes"],["NADAR","Lo haces en el agua"],
+    ["TRABAJAR","Lo haces en la oficina, de lunes a viernes"],["ESTUDIAR","Lo haces para aprender"],
+    ["COCINAR","Preparar la comida"],["VIAJAR","Ir a otros países"],["ABRIR","Lo haces con la puerta y la llave"],
+    ["CERRAR","Lo contrario de abrir"],["ESCUCHAR","Lo haces con música y las orejas"],["PAGAR","Dar dinero en la tienda"],
+    ["AMAR","Querer mucho a una persona"],["SALTAR","Ir hacia arriba con los dos pies"],
+  ],
+  "Los números": [
+    ["CERO","Nada"],["UNO","El primer número"],["DOS","Uno más uno"],["TRES","Dos más uno"],["CUATRO","Dos más dos"],
+    ["CINCO","Los dedos de una mano"],["SEIS","Tres más tres"],["SIETE","Los días de la semana"],["OCHO","Cuatro más cuatro"],
+    ["NUEVE","Diez menos uno"],["DIEZ","Los dedos de las dos manos"],["ONCE","Diez más uno"],["DOCE","Los meses del año"],
+    ["QUINCE","Diez más cinco"],["VEINTE","Dos por diez"],["TREINTA","Tres por diez"],["CIEN","Diez por diez"],
+    ["MIL","Diez por cien"],["TRECE","Doce más uno"],["CATORCE","Diez más cuatro"],["DIECISEIS","Diez más seis"],
+    ["CUARENTA","Cuatro por diez"],["CINCUENTA","Cinco por diez"],["SESENTA","Seis por diez"],["SETENTA","Siete por diez"],
+    ["OCHENTA","Ocho por diez"],["NOVENTA","Nueve por diez"],["MILLON","Mil por mil"],
+  ],
+  "Los meses y los días": [
+    ["ENERO","El primer mes del año"],["FEBRERO","El mes más corto"],["MARZO","El tercer mes; empieza la primavera"],
+    ["ABRIL","El cuarto mes del año"],["MAYO","El quinto mes del año"],["JUNIO","El sexto mes; empieza el verano"],
+    ["JULIO","El séptimo mes, en pleno verano"],["AGOSTO","El octavo mes; muchas vacaciones"],
+    ["SEPTIEMBRE","El noveno mes; empieza el otoño"],["OCTUBRE","El décimo mes del año"],
+    ["NOVIEMBRE","El mes número once"],["DICIEMBRE","El último mes; Navidad"],
+    ["LUNES","El primer día de la semana"],["MARTES","El día después del lunes"],
+    ["MIERCOLES","El día en el medio de la semana"],["JUEVES","El día antes del viernes"],
+    ["VIERNES","El último día de trabajo"],["SABADO","El primer día del fin de semana"],
+    ["DOMINGO","El día de descanso, antes del lunes"],
+  ],
+  "La escuela": [
+    ["LIBRO","Lo lees, tiene muchas páginas"],["LAPIZ","Escribes con él, es de madera"],
+    ["PAPEL","Escribes en él, es blanco"],["MOCHILA","Llevas los libros en ella"],
+    ["CLASE","Habitación donde aprendes"],["EXAMEN","Prueba con preguntas y notas"],
+    ["PIZARRA","El profesor escribe en ella"],["BOLIGRAFO","Escribes con él, con tinta azul o negra"],
+    ["CUADERNO","Escribes tus notas en él"],["GOMA","Con ella borras el lápiz"],
+    ["REGLA","Con ella haces líneas rectas"],["TIJERAS","Con ellas cortas papel"],
+    ["MAPA","Muestra países y ciudades"],["PROFESOR","Persona que enseña en la escuela"],
+    ["ALUMNO","Persona que aprende en la escuela"],["DEBERES","Trabajo de la escuela para casa"],
+    ["PREGUNTA","Frase con «¿...?»"],["RESPUESTA","La das después de la pregunta"],
+    ["IDIOMA","El español o el alemán, por ejemplo"],
+  ],
+  "Las profesiones": [
+    ["MEDICO","Trabaja en el hospital, ayuda a los enfermos"],["ENFERMERA","Ayuda al médico en el hospital"],
+    ["COCINERO","Prepara la comida en el restaurante"],["CAMARERO","Trae la comida a tu mesa"],
+    ["POLICIA","Ayuda cuando hay problemas en la calle"],["BOMBERO","Apaga el fuego"],
+    ["PANADERO","Hace el pan"],["CANTANTE","Canta canciones"],["ACTOR","Trabaja en el cine o el teatro"],
+    ["PINTOR","Pinta cuadros o paredes"],["TAXISTA","Conduce un taxi"],["DENTISTA","Cuida tus dientes"],
+    ["PELUQUERO","Corta el pelo"],["JARDINERO","Trabaja con las plantas"],["ESCRITOR","Escribe libros"],
+    ["FUTBOLISTA","Juega al fútbol, es su trabajo"],["CARTERO","Trae las cartas a tu casa"],
+    ["VENDEDOR","Trabaja en una tienda, vende cosas"],
+  ],
+  "Los adjetivos": [
+    ["ALTO","Lo contrario de bajo"],["BAJO","Lo contrario de alto"],["NUEVO","Lo contrario de viejo"],
+    ["VIEJO","Lo contrario de nuevo"],["BUENO","Lo contrario de malo"],["MALO","Lo contrario de bueno"],
+    ["RAPIDO","Lo contrario de lento"],["LENTO","Lo contrario de rápido"],["FELIZ","Lo contrario de triste"],
+    ["TRISTE","Lo contrario de feliz"],["CALIENTE","Lo contrario de frío"],["FRIO","Lo contrario de caliente"],
+    ["BONITO","Lo contrario de feo"],["FEO","Lo contrario de bonito"],["LARGO","Lo contrario de corto"],
+    ["CORTO","Lo contrario de largo"],["RICO","Lo contrario de pobre; tiene mucho dinero"],
+    ["POBRE","Lo contrario de rico"],["FACIL","Lo contrario de difícil"],["DIFICIL","Lo contrario de fácil"],
+    ["LLENO","Lo contrario de vacío"],["VACIO","Lo contrario de lleno"],["GRANDE","Lo contrario de pequeño"],
+    ["GORDO","Lo contrario de delgado"],["DELGADO","Lo contrario de gordo"],
+  ],
+  "El tiempo libre": [
+    ["FUTBOL","Deporte con once jugadores y una pelota"],["TENIS","Deporte con raqueta"],
+    ["MUSICA","La escuchas con los oídos, tiene ritmo"],["GUITARRA","Instrumento con seis cuerdas"],
+    ["PIANO","Instrumento grande con teclas blancas y negras"],["PELOTA","Es redonda, juegas con ella"],
+    ["FIESTA","Celebración con música y amigos"],["BAILE","Mover el cuerpo con la música"],
+    ["DEPORTE","Fútbol, tenis o natación, por ejemplo"],["PISCINA","Nadas en ella"],
+    ["BICICLETA","Vehículo con dos ruedas, sin motor"],["JUEGO","Lo juegas para divertirte"],
+    ["CANCION","La cantas"],["PELICULA","La ves en el cine"],["TEATRO","Ves obras allí, con actores"],
+    ["FOTO","La haces con la cámara"],["VIAJE","Vas a otro país o ciudad"],
+    ["REGALO","Lo das en un cumpleaños"],["NATACION","Deporte en el agua"],
+    ["BALONCESTO","Deporte con canasta y pelota"],
+  ],
+  "El tiempo (clima)": [
+    ["SOL","Da luz y calor durante el día"],["LLUVIA","Agua que cae del cielo"],["NIEVE","Es blanca y fría, cae en invierno"],
+    ["VIENTO","Aire que se mueve"],["NUBE","Es blanca, está en el cielo y trae lluvia"],
+    ["FRIO","Lo sientes en invierno, necesitas abrigo"],["CALOR","Lo sientes en verano, hace mucho ___"],
+    ["TORMENTA","Lluvia fuerte con truenos"],["NIEBLA","Nube baja, no ves bien la calle"],
+    ["HIELO","Agua muy fría y dura"],["RAYO","Luz rápida de la tormenta"],["TRUENO","El ruido de la tormenta"],
+    ["ARCOIRIS","Tiene siete colores, sale después de la lluvia"],["GRADOS","La temperatura se mide en ellos"],
+    ["VERANO","Estación con mucho calor"],["INVIERNO","Estación con frío y nieve"],
+    ["PRIMAVERA","Estación de las flores"],["CLIMA","El tiempo típico de un país"],
+  ],
+  "Los países": [
+    ["ALEMANIA","El país de Berlín"],["FRANCIA","El país de París"],["ITALIA","El país de Roma y la pizza"],
+    ["PORTUGAL","El país de Lisboa"],["INGLATERRA","El país de Londres"],["MEXICO","País de América con tacos"],
+    ["ARGENTINA","País de Buenos Aires y el tango"],["CHILE","País largo y delgado de América del Sur"],
+    ["PERU","País de Machu Picchu"],["COLOMBIA","País del café en América del Sur"],
+    ["CUBA","Isla del Caribe, capital La Habana"],["JAPON","País del sushi"],["CHINA","El país con más personas"],
+    ["GRECIA","País de Atenas"],["SUIZA","País de las montañas y el chocolate"],
+    ["EUROPA","El continente de Alemania y España"],["MUNDO","Toda la Tierra, todos los países"],
+    ["ALEMAN","El idioma de Berlín"],["FRANCES","El idioma de París"],["ITALIANO","El idioma de Roma"],
+    ["INGLES","El idioma de Londres"],["MEXICANO","Persona de México"],
+  ],
+  "Los sentimientos": [
+    ["FELIZ","Lo contrario de triste"],["TRISTE","Lo contrario de feliz"],
+    ["CONTENTO","Estás así en tu cumpleaños"],["CANSADO","Estás así después de trabajar mucho, quieres dormir"],
+    ["ENFERMO","Estás así, vas al médico"],["NERVIOSO","Estás así antes del examen"],
+    ["TRANQUILO","Sin estrés, sin problemas"],["ABURRIDO","Estás así cuando no pasa nada"],
+    ["ENFADADO","Estás así cuando algo está muy mal"],["SORPRENDIDO","Estás así cuando no lo esperas"],
+    ["ASUSTADO","Estás así cuando tienes miedo"],["ENAMORADO","Estás así cuando amas a una persona"],
+    ["SOLO","Sin otras personas"],["AMOR","Lo sientes por tu familia"],["MIEDO","Lo sientes en la noche oscura"],
+    ["HAMBRE","La sientes cuando quieres comer"],["SED","La sientes cuando quieres beber agua"],
+    ["SUERTE","La necesitas en el casino"],["RISA","La haces cuando algo es muy divertido: ja, ja"],
+  ],
+  "La hora": [
+    ["HORA","Sesenta minutos"],["MINUTO","Sesenta segundos"],["SEGUNDO","Parte muy pequeña de un minuto"],
+    ["DIA","Veinticuatro horas"],["NOCHE","Cuando está oscuro y duermes"],["TARDE","Después del mediodía"],
+    ["MEDIODIA","Las doce del día"],["MEDIANOCHE","Las doce de la noche"],["SEMANA","Siete días"],
+    ["MES","Treinta días, más o menos"],["AYER","El día antes de hoy"],["HOY","Este día"],
+    ["AHORA","En este momento"],["PRONTO","En poco tiempo"],["SIEMPRE","Todos los días, sin fin"],
+    ["NUNCA","Cero veces"],["TEMPRANO","Lo contrario de tarde"],["ANTES","Lo contrario de después"],
+    ["SIGLO","Cien años"],
+  ],
+  "Frutas y verduras": [
+    ["MANZANA","Fruta roja o verde"],["NARANJA","Fruta del zumo típico"],["PLATANO","Fruta amarilla y larga"],
+    ["FRESA","Fruta roja y pequeña"],["UVA","Fruta pequeña del vino"],["LIMON","Fruta amarilla muy ácida"],
+    ["TOMATE","Verdura roja de la ensalada"],["PATATA","Verdura de las patatas fritas"],
+    ["PERA","Fruta verde o amarilla, con forma de lámpara"],["CEREZA","Fruta roja muy pequeña, con hueso"],
+    ["MELON","Fruta grande y dulce del verano"],["SANDIA","Fruta muy grande, verde fuera y roja dentro"],
+    ["CEBOLLA","Verdura que te hace llorar"],["ZANAHORIA","Verdura naranja, al conejo le gusta"],
+    ["LECHUGA","Verdura verde de la ensalada"],["PIMIENTO","Verdura roja, verde o amarilla"],
+    ["AJO","Verdura pequeña y blanca, con olor fuerte"],["MAIZ","Verdura amarilla, de las palomitas"],
+    ["COCO","Fruta marrón y dura de la palmera"],["KIWI","Fruta pequeña, verde por dentro"],
+  ],
+  "Los transportes": [
+    ["COCHE","Vas por la calle en él"],["AUTOBUS","Transporte grande con muchas personas"],
+    ["TREN","Va por las vías, de ciudad a ciudad"],["METRO","Tren debajo de la ciudad"],
+    ["TAXI","Coche con conductor, pagas por el viaje"],["BICICLETA","Vehículo con dos ruedas, sin motor"],
+    ["AVION","Vuela por el cielo, muy rápido"],["BARCO","Va por el mar"],
+    ["MOTO","Como una bicicleta, pero con motor"],["CAMION","Coche muy grande para transportar cosas"],
+    ["TRANVIA","Tren pequeño por las calles de la ciudad"],["HELICOPTERO","Vuela con hélice, sin alas"],
+    ["AEROPUERTO","Los aviones salen de allí"],["PUERTO","Los barcos están allí"],
+    ["BILLETE","Lo compras para el tren o el avión"],["MALETA","Llevas tu ropa en ella cuando viajas"],
+    ["GASOLINA","El coche la necesita"],["RUEDA","El coche tiene cuatro"],
+  ],
+};
+
+// Mezcla: Wörter aus allen Kategorien, Hinweis beginnt mit der Kategorie
+(function () {
+  const seen = new Set();
+  const mezcla = [];
+  for (const [name, list] of Object.entries(THEMES)) {
+    for (const [w, clue] of list) {
+      if (seen.has(w)) continue;
+      seen.add(w);
+      mezcla.push([w, name + " — " + clue]);
+    }
+  }
+  THEMES["Mezcla"] = mezcla;
+})();
+
+const ICONS = {
+  "Los animales": "🐾", "La comida": "🥘", "La casa": "🏠", "El cuerpo": "🖐",
+  "La familia": "👪", "La naturaleza": "🌿", "La ropa": "👕", "Los colores": "🎨",
+  "La ciudad": "🏙", "Los verbos": "🏃", "Los números": "🔢", "Los meses y los días": "📅",
+  "La escuela": "🎒", "Las profesiones": "💼", "Los adjetivos": "⚖️", "El tiempo libre": "⚽",
+  "El tiempo (clima)": "🌦", "Los países": "🌍", "Los sentimientos": "😊", "La hora": "🕐",
+  "Frutas y verduras": "🍎", "Los transportes": "🚗", "Mezcla": "🎲",
+};
+
+// ------------------------------------------------------------------
+// Generator
+// ------------------------------------------------------------------
+const SIZE = 17;
+const key = (r, c) => r + "," + c;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function canPlace(grid, word, r0, c0, dr, dc) {
+  const endR = r0 + (word.length - 1) * dr;
+  const endC = c0 + (word.length - 1) * dc;
+  if (r0 < 0 || c0 < 0 || endR >= SIZE || endC >= SIZE) return null;
+  if (grid.has(key(r0 - dr, c0 - dc))) return null;
+  if (grid.has(key(endR + dr, endC + dc))) return null;
+  let crossings = 0;
+  for (let i = 0; i < word.length; i++) {
+    const r = r0 + i * dr, c = c0 + i * dc;
+    const existing = grid.get(key(r, c));
+    if (existing) {
+      if (existing !== word[i]) return null;
+      crossings++;
+    } else {
+      if (grid.has(key(r + dc, c + dr)) || grid.has(key(r - dc, c - dr))) return null;
+    }
+  }
+  return crossings === 0 ? null : crossings;
+}
+
+function generatePuzzle(themeWords, target = 10) {
+  const pool = shuffle(themeWords)
+    .slice(0, Math.min(themeWords.length, target + 3))
+    .sort((a, b) => b[0].length - a[0].length);
+  const grid = new Map();
+  const placed = [];
+
+  for (const [word, clue] of pool) {
+    if (placed.length >= target) break;
+    if (placed.length === 0) {
+      const r = Math.floor(SIZE / 2);
+      const c = Math.floor((SIZE - word.length) / 2);
+      for (let i = 0; i < word.length; i++) grid.set(key(r, c + i), word[i]);
+      placed.push({ word, clue, r, c, dr: 0, dc: 1 });
+      continue;
+    }
+    let best = null;
+    for (const [k, letter] of grid) {
+      const [gr, gc] = k.split(",").map(Number);
+      for (let i = 0; i < word.length; i++) {
+        if (word[i] !== letter) continue;
+        for (const [dr, dc] of [[0, 1], [1, 0]]) {
+          const r0 = gr - i * dr, c0 = gc - i * dc;
+          const score = canPlace(grid, word, r0, c0, dr, dc);
+          if (score !== null && (!best || score > best.score || (score === best.score && Math.random() < 0.4))) {
+            best = { r: r0, c: c0, dr, dc, score };
+          }
+        }
+      }
+    }
+    if (best) {
+      for (let i = 0; i < word.length; i++)
+        grid.set(key(best.r + i * best.dr, best.c + i * best.dc), word[i]);
+      placed.push({ word, clue, r: best.r, c: best.c, dr: best.dr, dc: best.dc });
+    }
+  }
+
+  let minR = SIZE, maxR = 0, minC = SIZE, maxC = 0;
+  for (const k of grid.keys()) {
+    const [r, c] = k.split(",").map(Number);
+    minR = Math.min(minR, r); maxR = Math.max(maxR, r);
+    minC = Math.min(minC, c); maxC = Math.max(maxC, c);
+  }
+  const cells = new Map();
+  for (const [k, v] of grid) {
+    const [r, c] = k.split(",").map(Number);
+    cells.set(key(r - minR, c - minC), v);
+  }
+  const words = placed.map((p) => {
+    const r = p.r - minR, c = p.c - minC;
+    const wcells = [];
+    for (let i = 0; i < p.word.length; i++) wcells.push(key(r + i * p.dr, c + i * p.dc));
+    return { ...p, r, c, cells: wcells, dir: p.dc === 1 ? "H" : "V" };
+  });
+  const starts = new Map();
+  let num = 0;
+  const rows = maxR - minR + 1, cols = maxC - minC + 1;
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++) {
+      const k = key(r, c);
+      if (words.some((w) => w.cells[0] === k)) { num++; starts.set(k, num); }
+    }
+  for (const w of words) w.num = starts.get(w.cells[0]);
+  words.sort((a, b) => a.num - b.num);
+  return { cells, words, rows, cols, starts };
+}
+
+// ------------------------------------------------------------------
+// Spiel-Zustand & UI
+// ------------------------------------------------------------------
+const isMobile = matchMedia("(pointer: coarse)").matches;
+if (isMobile) document.body.classList.add("mobile");
+document.getElementById("ver").textContent = VERSION;
+
+const themeNames = Object.keys(THEMES);
+let theme = themeNames[0];
+let puzzle = null;
+let entries = {};   // key -> letter
+let status = {};    // key -> "ok" | "bad"
+let active = null;  // { key, dir }
+let solved = false;
+
+const cellEls = {};       // key -> element
+const clueEls = {};       // num+dir -> element
+const $ = (id) => document.getElementById(id);
+
+function wordAt(k, dir) {
+  return puzzle.words.find((w) => w.dir === dir && w.cells.includes(k)) || null;
+}
+
+function activeWord() {
+  if (!active) return null;
+  return wordAt(active.key, active.dir) || wordAt(active.key, active.dir === "H" ? "V" : "H");
+}
+
+// ---------- Rendering ----------
+function renderChips() {
+  const box = $("chips");
+  box.innerHTML = "";
+  for (const t of themeNames) {
+    const b = document.createElement("button");
+    b.className = "chip" + (t === theme ? " sel" : "");
+    b.textContent = (ICONS[t] || "") + " " + t;
+    b.onclick = () => newPuzzle(t);
+    box.appendChild(b);
+  }
+}
+
+function cellSizePx() {
+  const w = document.querySelector(".boardWrap").clientWidth;
+  return Math.min(40, Math.floor((w - 8 - (puzzle.cols - 1) * 2) / puzzle.cols));
+}
+
+function buildBoard() {
+  const board = $("board");
+  board.innerHTML = "";
+  for (const k in cellEls) delete cellEls[k];
+  const sz = cellSizePx();
+  board.style.gridTemplateColumns = `repeat(${puzzle.cols}, ${sz}px)`;
+  board.style.gridTemplateRows = `repeat(${puzzle.rows}, ${sz}px)`;
+  for (let r = 0; r < puzzle.rows; r++) {
+    for (let c = 0; c < puzzle.cols; c++) {
+      const k = key(r, c);
+      const div = document.createElement("div");
+      if (!puzzle.cells.has(k)) {
+        div.className = "cell spacer";
+      } else {
+        div.className = "cell";
+        div.style.fontSize = Math.max(14, sz * 0.5) + "px";
+        if (puzzle.starts.has(k)) {
+          const n = document.createElement("span");
+          n.className = "n";
+          n.style.fontSize = Math.max(8, sz * 0.26) + "px";
+          n.textContent = puzzle.starts.get(k);
+          div.appendChild(n);
+        }
+        const letter = document.createElement("span");
+        letter.className = "letter";
+        div.appendChild(letter);
+        div.onclick = () => selectCell(k);
+        cellEls[k] = div;
+      }
+      board.appendChild(div);
+    }
+  }
+}
+
+function renderClues() {
+  for (const [dir, boxId] of [["H", "cluesH"], ["V", "cluesV"]]) {
+    const box = $(boxId);
+    box.innerHTML = "";
+    for (const w of puzzle.words.filter((x) => x.dir === dir)) {
+      const b = document.createElement("button");
+      b.className = "clueItem";
+      b.innerHTML = `<b>${w.num}.</b><span>${w.clue} <span class="len">(${w.word.length})</span></span>`;
+      b.onclick = () => { setActive(w.cells[0], w.dir); };
+      clueEls[w.num + dir] = b;
+      box.appendChild(b);
+    }
+  }
+}
+
+function updateAll() {
+  document.body.classList.toggle("solvedState", solved);
+  const aw = activeWord();
+  const inWord = new Set(aw ? aw.cells : []);
+
+  for (const [k, el] of Object.entries(cellEls)) {
+    el.classList.toggle("inword", inWord.has(k));
+    el.classList.toggle("active", !!active && active.key === k);
+    el.classList.toggle("ok", status[k] === "ok");
+    el.classList.toggle("bad", status[k] === "bad");
+    el.querySelector(".letter").textContent = entries[k] || "";
+  }
+
+  const banner = $("banner");
+  if (aw) {
+    banner.innerHTML =
+      `<span class="num">${aw.num} ${aw.dir === "H" ? "→" : "↓"}</span>` +
+      `<span class="clue"></span>`;
+    banner.querySelector(".clue").textContent = aw.clue;
+  } else {
+    banner.innerHTML = `<span class="hintText">Toca una casilla para empezar · Tippe ein Feld an</span>`;
+  }
+
+  for (const w of puzzle.words) {
+    const el = clueEls[w.num + w.dir];
+    const done = w.cells.every((ck) => entries[ck] === puzzle.cells.get(ck));
+    el.classList.toggle("done", done);
+    el.classList.toggle("sel", aw === w);
+  }
+}
+
+// ---------- Interaktion ----------
+function setActive(k, dir) {
+  active = { key: k, dir };
+  updateAll();
+  if (isMobile && cellEls[k]) cellEls[k].scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+function selectCell(k) {
+  let dir;
+  if (active && active.key === k) {
+    dir = active.dir === "H" ? "V" : "H";
+    if (!wordAt(k, dir)) dir = active.dir;
+  } else {
+    const prevDir = active ? active.dir : "H";
+    dir = wordAt(k, prevDir) ? prevDir : wordAt(k, "H") ? "H" : "V";
+  }
+  setActive(k, dir);
+}
+
+function afterFill(k) {
+  // fertig? -> prüfen
+  const allFilled = [...puzzle.cells.keys()].every((ck) => entries[ck]);
+  if (allFilled) {
+    const allRight = [...puzzle.cells.entries()].every(([ck, sol]) => entries[ck] === sol);
+    solved = allRight;
+    if (!allRight) {
+      status = {};
+      for (const [ck, sol] of puzzle.cells) status[ck] = entries[ck] === sol ? "ok" : "bad";
+    }
+  }
+  // weiterspringen, bereits gefüllte Felder überspringen
+  let dir = active ? active.dir : null;
+  if (!dir || !wordAt(k, dir)) dir = wordAt(k, "H") ? "H" : "V";
+  const w = wordAt(k, dir);
+  if (w) {
+    let i = w.cells.indexOf(k) + 1;
+    while (i < w.cells.length && entries[w.cells[i]]) i++;
+    if (i < w.cells.length) { setActive(w.cells[i], dir); return; }
+  }
+  updateAll();
+}
+
+function typeChar(ch) {
+  if (!active) return;
+  ch = ch.toUpperCase();
+  if (!/^[A-ZÑ]$/.test(ch)) return;
+  const k = active.key;
+  entries[k] = ch;
+  delete status[k];
+  afterFill(k);
+}
+
+function doBackspace() {
+  if (!active) return;
+  const k = active.key;
+  if (entries[k]) {
+    delete entries[k];
+    delete status[k];
+    updateAll();
+  } else {
+    const w = wordAt(k, active.dir);
+    if (!w) return;
+    const i = w.cells.indexOf(k) - 1;
+    if (i >= 0) {
+      const pk = w.cells[i];
+      delete entries[pk];
+      delete status[pk];
+      setActive(pk, active.dir);
+    }
+  }
+}
+
+function moveArrow(dir, delta) {
+  if (!active) return;
+  const k = active.key;
+  const w = wordAt(k, dir);
+  if (!w) { setActive(k, dir); return; }
+  const i = w.cells.indexOf(k) + delta;
+  if (i >= 0 && i < w.cells.length) setActive(w.cells[i], dir);
+  else setActive(k, dir);
+}
+
+function check() {
+  status = {};
+  for (const [ck, sol] of puzzle.cells) {
+    if (entries[ck]) status[ck] = entries[ck] === sol ? "ok" : "bad";
+  }
+  updateAll();
+}
+
+function hint() {
+  let k = active ? active.key : [...puzzle.cells.keys()].find((ck) => !entries[ck]);
+  if (!k) return;
+  if (!active) setActive(k, wordAt(k, "H") ? "H" : "V");
+  entries[k] = puzzle.cells.get(k);
+  status[k] = "ok";
+  afterFill(k);
+}
+
+function newPuzzle(t = theme) {
+  theme = t;
+  puzzle = generatePuzzle(THEMES[t]);
+  entries = {}; status = {}; active = null; solved = false;
+  renderChips();
+  buildBoard();
+  renderClues();
+  updateAll();
+}
+
+// ---------- Eingabe: Hardware-Tastatur (Desktop) ----------
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "Backspace") { e.preventDefault(); doBackspace(); }
+  else if (e.key === "ArrowRight") { e.preventDefault(); moveArrow("H", 1); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); moveArrow("H", -1); }
+  else if (e.key === "ArrowDown") { e.preventDefault(); moveArrow("V", 1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); moveArrow("V", -1); }
+  else if (/^[a-zñA-ZÑ]$/.test(e.key)) { e.preventDefault(); typeChar(e.key); }
+});
+
+// ---------- Eingabe: Bildschirmtastatur (Mobile) ----------
+(function buildKeyboard() {
+  const kbd = $("kbd");
+  for (const row of ["QWERTYUIOP", "ASDFGHJKLÑ", "ZXCVBNM⌫"]) {
+    const div = document.createElement("div");
+    div.className = "krow";
+    for (const ch of row) {
+      const b = document.createElement("button");
+      b.className = "key" + (ch === "⌫" ? " back" : "");
+      b.textContent = ch;
+      b.onclick = () => (ch === "⌫" ? doBackspace() : typeChar(ch));
+      div.appendChild(b);
+    }
+    kbd.appendChild(div);
+  }
+})();
+
+$("btnCheck").onclick = check;
+$("btnHint").onclick = hint;
+$("btnNew").onclick = () => newPuzzle();
+
+window.addEventListener("resize", () => { if (puzzle) { buildBoard(); updateAll(); } });
+
+// Service Worker für Offline-Nutzung (optional, scheitert leise ohne sw.js)
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+
+newPuzzle(theme);
+</script>
+</body>
+</html>
