@@ -1,6 +1,6 @@
 // Crucigramas service worker — bump the version on every release
 // so clients pick up the new version.
-const CACHE = "crucigramas-v2.5";
+const CACHE = "crucigramas-v2.6";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {
