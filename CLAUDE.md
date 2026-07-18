@@ -23,12 +23,12 @@ directly.
 
 ## Versioning scheme
 
-Current version: **v2.4-web**
+Current version: **v2.5-web**
 
 On **every release**, two places must be bumped in sync:
 
-1. `index.html` — the `VERSION` constant (e.g. `const VERSION = "2.4-web";`)
-2. `sw.js` — the cache name `CACHE` (e.g. `const CACHE = "crucigramas-v2.4";`)
+1. `index.html` — the `VERSION` constant (e.g. `const VERSION = "2.5-web";`)
+2. `sw.js` — the cache name `CACHE` (e.g. `const CACHE = "crucigramas-v2.5";`)
 
 Bumping `CACHE` is mandatory so that installed clients discard the old service
 worker cache and load the new version.
