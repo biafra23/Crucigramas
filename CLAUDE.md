@@ -18,8 +18,16 @@ in Spanish.
 
 ## Deployment
 
-Hosted via GitHub Pages (branch `main`, root). Every push to `main` publishes
-directly.
+Hosted via GitHub Pages. Every push to `main` triggers the
+`.github/workflows/deploy.yml` workflow, which uploads the repository root
+(only `.git` and `.github` excluded) as the Pages artifact and deploys it. It can also be
+run manually via `workflow_dispatch`, but only ever deploys `main`. If the
+workflow run fails, the site was NOT updated — check the Actions run after a
+release.
+
+One-time setup: the Pages source must be set to "GitHub Actions" under
+Settings → Pages, otherwise the legacy branch build keeps publishing
+alongside this workflow.
 
 ## Versioning scheme
 
