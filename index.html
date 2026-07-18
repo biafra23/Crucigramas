@@ -152,7 +152,7 @@
 
 <script>
 "use strict";
-const VERSION = "2.7-web";
+const VERSION = "2.8-web";
 
 // ------------------------------------------------------------------
 // Word lists: simple Spanish (A1), clues in Spanish
@@ -655,6 +655,8 @@ function updateAll() {
     el.classList.toggle("done", done);
     el.classList.toggle("sel", aw === w);
   }
+
+  saveState();
 }
 
 // ---------- Interaction ----------
@@ -760,6 +762,46 @@ function hasProgress() {
   return !!puzzle && !solved && Object.keys(entries).length > 0;
 }
 
+// ---------- Persistence (survive reloads / closing the tab) ----------
+const SAVE_KEY = "crucigramas-save-v1";
+
+function saveState() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      theme, entries, status, solved,
+      puzzle: {
+        cells: [...puzzle.cells],
+        starts: [...puzzle.starts],
+        words: puzzle.words,
+        rows: puzzle.rows,
+        cols: puzzle.cols,
+      },
+    }));
+  } catch (e) { /* private mode / quota — play without saving */ }
+}
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    // only restore an unfinished puzzle with actual progress
+    if (!s || !THEMES[s.theme] || s.solved || !Object.keys(s.entries || {}).length) return false;
+    theme = s.theme;
+    puzzle = {
+      cells: new Map(s.puzzle.cells),
+      starts: new Map(s.puzzle.starts),
+      words: s.puzzle.words,
+      rows: s.puzzle.rows,
+      cols: s.puzzle.cols,
+    };
+    entries = s.entries; status = s.status || {}; active = null; solved = false;
+    renderChips();
+    buildBoard();
+    renderClues();
+    updateAll();
+    return true;
+  } catch (e) { return false; }
+}
+
 function newPuzzle(t = theme) {
   if (hasProgress() &&
       !confirm("Perderás el progreso de este crucigrama. ¿Quieres continuar?")) return;
@@ -806,17 +848,12 @@ $("btnNew").onclick = () => newPuzzle();
 
 window.addEventListener("resize", () => { if (puzzle) { buildBoard(); updateAll(); } });
 
-// Warn before leaving the page with an unfinished puzzle
-window.addEventListener("beforeunload", (e) => {
-  if (hasProgress()) { e.preventDefault(); e.returnValue = ""; }
-});
-
 // Service worker for offline use (optional, fails silently without sw.js)
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
 
-newPuzzle(theme);
+if (!loadState()) newPuzzle(theme);
 </script>
 </body>
 </html>
