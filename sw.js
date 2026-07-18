@@ -1,6 +1,6 @@
-// Crucigramas Service Worker — bei jedem Release die Versionsnummer erhöhen,
-// damit Clients die neue Version laden.
-const CACHE = "crucigramas-v2.3";
+// Crucigramas service worker — bump the version on every release
+// so clients pick up the new version.
+const CACHE = "crucigramas-v2.4";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -15,7 +15,7 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-// Netzwerk zuerst (damit Updates ankommen), Cache als Offline-Fallback
+// Network first (so updates arrive), cache as offline fallback
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   e.respondWith(

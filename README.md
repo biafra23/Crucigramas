@@ -1,17 +1,17 @@
 # Crucigramas — Español fácil
 
-Einfache spanische Kreuzworträtsel zum Spanischlernen, als Progressive Web App
-(PWA) — offline nutzbar und auf dem Homescreen installierbar.
+Simple Spanish crossword puzzles for language learners, built as a Progressive
+Web App (PWA) — works offline and can be installed to the home screen.
 
-**▶ Spielen: https://biafra23.github.io/Crucigramas/**
+**▶ Play: https://biafra23.github.io/Crucigramas/**
 
-## Technik
+## Tech
 
-Reines Vanilla-HTML/CSS/JS ohne Build-Schritt. Die gesamte App steckt in
-`index.html`; `sw.js` sorgt als Service Worker für Offline-Betrieb
-(Network-first mit Cache-Fallback).
+Plain vanilla HTML/CSS/JS with no build step. The entire app lives in
+`index.html`; `sw.js` is a service worker providing offline support
+(network first with cache fallback).
 
-## Entwicklung
+## Development
 
-Details zu Projektstruktur und Versionsschema stehen in [CLAUDE.md](CLAUDE.md).
-Jeder Push auf `main` wird automatisch über GitHub Pages veröffentlicht.
+See [CLAUDE.md](CLAUDE.md) for the project structure and the versioning scheme.
+Every push to `main` is published automatically via GitHub Pages.

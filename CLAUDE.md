@@ -1,28 +1,34 @@
 # Crucigramas — Español fácil
 
-Eine Progressive Web App (PWA) mit einfachen spanischen Kreuzworträtseln zum
-Spanischlernen. Reines Vanilla-HTML/CSS/JS ohne Build-Schritt — die gesamte App
-(Layout, Rätseldaten, Spiellogik) steckt in `index.html`.
+A Progressive Web App (PWA) with simple Spanish crossword puzzles for learning
+Spanish. Plain vanilla HTML/CSS/JS with no build step — the entire app (layout,
+puzzle data, game logic) lives in `index.html`.
 
-## Dateien
+## Language policy
 
-- `index.html` — komplette App inkl. Styles, Rätseldaten und Spiellogik
-- `sw.js` — Service Worker (Network-first mit Offline-Cache-Fallback)
-- `manifest.webmanifest`, `icon-192.png`, `icon-512.png` — PWA-Manifest und Icons
+Everything in this repo is in English (docs, code comments, commit messages,
+repo description). The game itself — UI text, clues, word lists — is entirely
+in Spanish.
+
+## Files
+
+- `index.html` — the complete app including styles, puzzle data, and game logic
+- `sw.js` — service worker (network first with offline cache fallback)
+- `manifest.webmanifest`, `icon-192.png`, `icon-512.png` — PWA manifest and icons
 
 ## Deployment
 
-Gehostet über GitHub Pages (Branch `main`, Root). Jeder Push auf `main`
-veröffentlicht direkt.
+Hosted via GitHub Pages (branch `main`, root). Every push to `main` publishes
+directly.
 
-## Versionsschema
+## Versioning scheme
 
-Aktuelle Version: **v2.3-web**
+Current version: **v2.4-web**
 
-Bei **jedem Release** müssen zwei Stellen synchron hochgezählt werden:
+On **every release**, two places must be bumped in sync:
 
-1. `index.html` — die Konstante `VERSION` (z. B. `const VERSION = "2.3-web";`)
-2. `sw.js` — der Cache-Name `CACHE` (z. B. `const CACHE = "crucigramas-v2.3";`)
+1. `index.html` — the `VERSION` constant (e.g. `const VERSION = "2.4-web";`)
+2. `sw.js` — the cache name `CACHE` (e.g. `const CACHE = "crucigramas-v2.4";`)
 
-Das Hochzählen von `CACHE` ist zwingend, damit installierte Clients den alten
-Service-Worker-Cache verwerfen und die neue Version laden.
+Bumping `CACHE` is mandatory so that installed clients discard the old service
+worker cache and load the new version.

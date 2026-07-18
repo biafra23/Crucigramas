@@ -1,7 +1,7 @@
 {
   "name": "Crucigramas — Español fácil",
   "short_name": "Crucigramas",
-  "description": "Interaktive Kreuzworträtsel mit einfachen spanischen Wörtern (A1)",
+  "description": "Crucigramas interactivos con palabras españolas fáciles (A1)",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

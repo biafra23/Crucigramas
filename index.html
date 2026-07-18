@@ -129,7 +129,7 @@
   <div class="chips" id="chips"></div>
 
   <div class="banner" id="banner">
-    <span class="hintText">Toca una casilla para empezar · Tippe ein Feld an</span>
+    <span class="hintText">Toca una casilla para empezar</span>
   </div>
 
   <div class="boardWrap"><div id="board"></div></div>
@@ -145,17 +145,17 @@
   <section><h2>Horizontales →</h2><div id="cluesH"></div></section>
   <section><h2>Verticales ↓</h2><div id="cluesV"></div></section>
 
-  <footer>Escribe sin acentos: «pájaro» → PAJARO · Tipp ohne Akzente eingeben</footer>
+  <footer>Escribe sin acentos: «pájaro» → PAJARO</footer>
 </div>
 
 <div id="kbd"></div>
 
 <script>
 "use strict";
-const VERSION = "2.3-web";
+const VERSION = "2.4-web";
 
 // ------------------------------------------------------------------
-// Wortlisten: einfaches Spanisch (A1), Hinweise auf Spanisch
+// Word lists: simple Spanish (A1), clues in Spanish
 // ------------------------------------------------------------------
 const THEMES = {
   "Los animales": [
@@ -394,7 +394,7 @@ const THEMES = {
   ],
 };
 
-// Mezcla: Wörter aus allen Kategorien, Hinweis beginnt mit der Kategorie
+// Mezcla: words from every category, clue prefixed with the category name
 (function () {
   const seen = new Set();
   const mezcla = [];
@@ -520,7 +520,7 @@ function generatePuzzle(themeWords, target = 10) {
 }
 
 // ------------------------------------------------------------------
-// Spiel-Zustand & UI
+// Game state & UI
 // ------------------------------------------------------------------
 const isMobile = matchMedia("(pointer: coarse)").matches;
 if (isMobile) document.body.classList.add("mobile");
@@ -634,7 +634,7 @@ function updateAll() {
       `<span class="clue"></span>`;
     banner.querySelector(".clue").textContent = aw.clue;
   } else {
-    banner.innerHTML = `<span class="hintText">Toca una casilla para empezar · Tippe ein Feld an</span>`;
+    banner.innerHTML = `<span class="hintText">Toca una casilla para empezar</span>`;
   }
 
   for (const w of puzzle.words) {
@@ -645,7 +645,7 @@ function updateAll() {
   }
 }
 
-// ---------- Interaktion ----------
+// ---------- Interaction ----------
 function setActive(k, dir) {
   active = { key: k, dir };
   updateAll();
@@ -665,7 +665,7 @@ function selectCell(k) {
 }
 
 function afterFill(k) {
-  // fertig? -> prüfen
+  // all cells filled? -> check
   const allFilled = [...puzzle.cells.keys()].every((ck) => entries[ck]);
   if (allFilled) {
     const allRight = [...puzzle.cells.entries()].every(([ck, sol]) => entries[ck] === sol);
@@ -675,7 +675,7 @@ function afterFill(k) {
       for (const [ck, sol] of puzzle.cells) status[ck] = entries[ck] === sol ? "ok" : "bad";
     }
   }
-  // weiterspringen, bereits gefüllte Felder überspringen
+  // advance, skipping cells that are already filled
   let dir = active ? active.dir : null;
   if (!dir || !wordAt(k, dir)) dir = wordAt(k, "H") ? "H" : "V";
   const w = wordAt(k, dir);
@@ -754,7 +754,7 @@ function newPuzzle(t = theme) {
   updateAll();
 }
 
-// ---------- Eingabe: Hardware-Tastatur (Desktop) ----------
+// ---------- Input: hardware keyboard (desktop) ----------
 document.addEventListener("keydown", (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "Backspace") { e.preventDefault(); doBackspace(); }
@@ -765,7 +765,7 @@ document.addEventListener("keydown", (e) => {
   else if (/^[a-zñA-ZÑ]$/.test(e.key)) { e.preventDefault(); typeChar(e.key); }
 });
 
-// ---------- Eingabe: Bildschirmtastatur (Mobile) ----------
+// ---------- Input: on-screen keyboard (mobile) ----------
 (function buildKeyboard() {
   const kbd = $("kbd");
   for (const row of ["QWERTYUIOP", "ASDFGHJKLÑ", "ZXCVBNM⌫"]) {
@@ -788,7 +788,7 @@ $("btnNew").onclick = () => newPuzzle();
 
 window.addEventListener("resize", () => { if (puzzle) { buildBoard(); updateAll(); } });
 
-// Service Worker für Offline-Nutzung (optional, scheitert leise ohne sw.js)
+// Service worker for offline use (optional, fails silently without sw.js)
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
