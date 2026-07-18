@@ -805,20 +805,23 @@ function restorePuzzle(p) {
     const [r, c] = String(k).split(",").map(Number);
     return Number.isInteger(r) && Number.isInteger(c) && r >= 0 && r < p.rows && c >= 0 && c < p.cols;
   };
+  const LETTER = /^[A-ZÑ]$/;
   const cells = new Map(), starts = new Map();
   for (const e of p.cells) {
-    if (!Array.isArray(e) || typeof e[0] !== "string" || typeof e[1] !== "string" || !inBounds(e[0])) return null;
+    if (!Array.isArray(e) || typeof e[0] !== "string" || typeof e[1] !== "string" ||
+        !LETTER.test(e[1]) || !inBounds(e[0])) return null;
     cells.set(e[0], e[1]);
   }
   for (const e of p.starts) {
-    if (!Array.isArray(e) || typeof e[0] !== "string" || typeof e[1] !== "number" || !cells.has(e[0])) return null;
+    if (!Array.isArray(e) || typeof e[0] !== "string" ||
+        !Number.isInteger(e[1]) || e[1] <= 0 || !cells.has(e[0])) return null;
     starts.set(e[0], e[1]);
   }
   for (const w of p.words) {
-    if (!w || typeof w.word !== "string" || typeof w.clue !== "string" ||
-        (w.dir !== "H" && w.dir !== "V") || typeof w.num !== "number" ||
+    if (!w || typeof w.word !== "string" || !/^[A-ZÑ]+$/.test(w.word) || typeof w.clue !== "string" ||
+        (w.dir !== "H" && w.dir !== "V") || !Number.isInteger(w.num) || w.num <= 0 ||
         !Array.isArray(w.cells) || w.cells.length !== w.word.length ||
-        !w.cells.every((k) => cells.has(k))) return null;
+        !w.cells.every((k, i) => cells.get(k) === w.word[i])) return null;
   }
   return { cells, starts, words: p.words, rows: p.rows, cols: p.cols };
 }
@@ -841,7 +844,8 @@ function loadState() {
   // keep only entries/status that fit the restored grid
   const e = {}, st = {};
   if (s.entries && typeof s.entries === "object")
-    for (const [k, v] of Object.entries(s.entries)) if (p.cells.has(k) && typeof v === "string") e[k] = v;
+    for (const [k, v] of Object.entries(s.entries))
+      if (p.cells.has(k) && typeof v === "string" && /^[A-ZÑ]$/.test(v)) e[k] = v;
   if (s.status && typeof s.status === "object")
     for (const [k, v] of Object.entries(s.status)) if (k in e && (v === "ok" || v === "bad")) st[k] = v;
   if (!Object.keys(e).length) {
